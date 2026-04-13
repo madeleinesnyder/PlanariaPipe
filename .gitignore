@@ -1,0 +1,16 @@
+# Images
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.gif
+*.GIF
+
+# Binary data
+*.bin
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
