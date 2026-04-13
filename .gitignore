@@ -9,6 +9,9 @@
 # Binary data
 *.bin
 
+*.yt
+*.yaml
+
 # Jupyter checkpoints
 .ipynb_checkpoints/
 
