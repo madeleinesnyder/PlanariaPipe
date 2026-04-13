@@ -39,14 +39,6 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
 # ============================================================================
-# DIRECTORY CONSTANTS
-# ============================================================================
-
-HOME = "/n/holylabs/gershman_lab/Users/zkelso/"
-HOLYLABS = "/n/holylabs/gershman_lab/Users/zkelso/Masks"
-NETSCRATCH = "/n/netscratch/gershman_lab/Lab/zkelso/"
-
-# ============================================================================
 # VIDEO SELECTION / CONFIGURATION
 # ============================================================================
 
@@ -555,7 +547,7 @@ def process_all_masks_OLD(filenames_, target_date, num_masks):
     Returns:
     list: List of metric dictionaries, one per frame
     """
-    split_csv = "/n/holylabs/gershman_lab/Users/zkelso/video_splits.csv"
+    split_csv = "hand_scored_datasheets/video_splits.csv"
     frame_split_starts, frame_split_ends = get_values_for_date(split_csv, target_date)
     all_metrics = []
     for filename_ in filenames_:
@@ -603,7 +595,7 @@ def process_all_masks(filenames_, num_masks):
     all_metrics : list of dict
         List of metric dictionaries, one per frame (per mask_index).
     """
-    split_csv = "/n/holylabs/gershman_lab/Users/zkelso/video_splits.csv"
+    split_csv = "hand_scored_datasheets/video_splits.csv"
     target_date = str(filenames_[0]).split("_fullvideo")[0].split("Masks/")[1]
     frame_split_starts, frame_split_ends = get_values_for_date(split_csv, target_date)
 
@@ -924,7 +916,7 @@ def performPCA(
     worm = loadResults(folder + the_video + ".pickle")
     theta = worm[0]
     filename_masks = the_video + "_binary_masks.npz"
-    with np.load("/n/holylabs/gershman_lab/Users/zkelso/Masks/" + filename_masks) as data:
+    with np.load("data/Masks/" + filename_masks) as data:
         masks = data["masks"]
     all_masks.append(masks)
     P, P_nan = defineStates_noLight(theta, tp=tp, smooth=smooth)
@@ -1791,7 +1783,7 @@ def run_feature_extraction_pipeline(
     start_time = time.time()
 
     if feature_folder is None:
-        feature_folder = os.path.join(HOLYLABS, "Features")
+        feature_folder = os.path.join("data", "Features")
     os.makedirs(feature_folder, exist_ok=True)
 
     print(f"{'=' * 30}")
@@ -1807,7 +1799,7 @@ def run_feature_extraction_pipeline(
     video_list_ = []
     for v in video_list:
         if check_date_in_splits(
-            "/n/holylabs/gershman_lab/Users/zkelso/video_splits.csv", v
+            "hand_scored_datasheets/video_splits.csv", v
         ):
             video_list_.append(v)
 
@@ -1836,7 +1828,7 @@ def run_feature_extraction_pipeline(
             trial_definitions_df = None
             if session_prefix:
                 trial_csv_path = os.path.join(
-                    HOME, "Raw_data", session_prefix, "trial_definitions.csv"
+                    "data", "Raw_data", session_prefix, "trial_definitions.csv"
                 )
                 if os.path.exists(trial_csv_path):
                     trial_definitions_df = pd.read_csv(trial_csv_path)
@@ -1857,7 +1849,7 @@ def run_feature_extraction_pipeline(
 
             Centroid_Coords = list(zip(Centroidxs, Centroidys))
 
-            nan_csv_dir = os.path.join(HOLYLABS, "Features", "NaN_analysis")
+            nan_csv_dir = os.path.join("data", "Features", "NaN_analysis")
             session_for_csv = current_video.split("_fullvideo")[0]
 
             update_nan_csv(
@@ -2046,14 +2038,10 @@ def main():
     """Run the full batch feature extraction pipeline."""
     global MASKS_DIR, FEATURES_DIR
 
-    HOME_local = "/n/holylabs/gershman_lab/Users/zkelso/"
-    NETSCRATCH_local = "/n/netscratch/gershman_lab/Lab/zkelso/"
-    HOLYLABS_local = "/n/holylabs/gershman_lab/Users/zkelso/"
-
-    MASKS_DIR = os.path.join(HOLYLABS_local, "Masks/")
-    FEATURES_DIR = os.path.join(HOLYLABS_local, "Features/")
-    THETA_PICKLE_DIR = os.path.join(HOLYLABS_local, "Planam_Wheels/")
-    PCA_REF_DIR = os.path.join(HOLYLABS_local, "PCA_REF/")
+    MASKS_DIR = "data/Masks/"
+    FEATURES_DIR = "data/Features/"
+    THETA_PICKLE_DIR = "data/Planam_Wheels/"
+    PCA_REF_DIR = "data/PCA_REF/"
     os.makedirs(FEATURES_DIR, exist_ok=True)
 
     SESSION_SUMMARIES_DIR = os.path.join(FEATURES_DIR, "session_summaries")
@@ -2323,8 +2311,8 @@ def main():
 
 
 # Module-level variable needed by run_feature_extraction_pipeline
-MASKS_DIR = os.path.join("/n/holylabs/gershman_lab/Users/zkelso/", "Masks/")
-FEATURES_DIR = os.path.join("/n/holylabs/gershman_lab/Users/zkelso/", "Features/")
+MASKS_DIR = "data/Masks/"
+FEATURES_DIR = "data/Features/"
 
 
 if __name__ == "__main__":

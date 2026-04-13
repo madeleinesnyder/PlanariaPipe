@@ -48,13 +48,13 @@ sessions_to_process = [
 use_prior_labels = True
 use_boxes = False
 
-holylabs_base = "/n/holylabs/gershman_lab/Users/zkelso/Raw_data/"
-masks_base = "/n/holylabs/gershman_lab/Users/zkelso/Masks/"
-gifs_base = "/n/netscratch/gershman_lab/Lab/zkelso/GIFs/"
+holylabs_base = "data/Raw_data/"
+masks_base = "data/Masks/"
+gifs_base = "data/GIFs/"
 boxes_base = "/n/holylabs/gershman_lab/Users/zkelso/DLC_Projects/WormTracking/labeled_data/"
-video_folders_base = "/n/netscratch/gershman_lab/Lab/zkelso/temporary_jpgs/unlabeled-data"
-video_split_csv = "/n/holylabs/gershman_lab/Users/zkelso/video_splits.csv"
-fake_split_csv = "/n/holylabs/gershman_lab/Users/zkelso/fake_video_splits.csv"
+video_folders_base = "data/temporary_jpgs/unlabeled-data"
+video_split_csv = "hand_scored_datasheets/video_splits.csv"
+fake_split_csv = "hand_scored_datasheets/fake_video_splits.csv"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -543,8 +543,8 @@ def load_predictor(device):
     """Build and return the SAM2 video predictor."""
     from sam2.build_sam import build_sam2_video_predictor
 
-    sam2_checkpoint = "/n/holylabs/gershman_lab/Users/zkms/sam_checkpoints/sam2.1_hiera_large.pt"
-    model_cfg = "//n/holylabs/gershman_lab/Users/zkms/sam_checkpoints/sam2.1_hiera_l.yaml"
+    sam2_checkpoint = "new_server_pipeline/sam_checkpoints/sam2.1_hiera_large.pt"
+    model_cfg = "new_server_pipeline/sam_checkpoints/sam2.1_hiera_l.yaml"
 
     predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
     print("Loaded video predictor.")

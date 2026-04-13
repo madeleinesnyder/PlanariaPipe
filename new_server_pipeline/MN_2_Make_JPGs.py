@@ -68,16 +68,14 @@ TC_TOTAL_FRAMES = 274
 # DIRECTORY PATHS
 # ============================================================================
 
-HOME = "/n/holylabs/gershman_lab/Users/zkelso"
-NETSCRATCH = "/n/netscratch/gershman_lab/Lab/zkelso"
-HOLYLABS = "/n/holylabs/gershman_lab/Users/zkelso/Raw_data"
+HOLYLABS = "data" # "/n/holylabs/gershman_lab/Users/zkelso/Raw_data"
 # DLC_PROJECT_PATH = '/n/holylabs/LABS/gershman_lab/Users/zkelso/DLC_Projects/WormTracking'
-DLC_PROJECT_PATH = os.path.join(NETSCRATCH,'temporary_jpgs')
+DLC_PROJECT_PATH = "data/temporary_jpgs"
 
 # Anonymization file paths
-ANONYMIZATION_DICT_PATH = '/n/holylabs/LABS/gershman_lab/Users/zkelso/Anonymization_tools/anonymization_dictionary.csv'
-LOOKUP_CSV_PATH = '/n/holylabs/LABS/gershman_lab/Users/zkelso/Anonymization_tools/anonymization_lookup.csv'
-EXPERIMENT_LOG = '/n/holylabs/LABS/gershman_lab/Users/zkelso/Anonymization_tools/experiment_log.csv'
+ANONYMIZATION_DICT_PATH = 'Anonymization_tools/anonymization_dictionary.csv'
+LOOKUP_CSV_PATH = 'Anonymization_tools/anonymization_lookup.csv'
+EXPERIMENT_LOG = 'Anonymization_tools/experiment_log.csv'
 
 # ============================================================================
 # BLOCK-TO-TRIALS MAPPING
@@ -126,8 +124,7 @@ def update_session_context(session_name):
     global binfile_to_segment, COORD_FOLDER, SESSION_TYPE
     
     binfile_to_segment = session_name
-    #COORD_FOLDER = os.path.join(NETSCRATCH, 'Regions_files', binfile_to_segment)
-    COORD_FOLDER = os.path.join(HOLYLABS, binfile_to_segment)
+    COORD_FOLDER = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment)
     
     # Detect session type from name
     if binfile_to_segment.endswith('_TC'):
@@ -156,8 +153,7 @@ def calculate_trial_definitions_from_timestamps():
     print("  Calculating trial definitions from timestamps...")
     
     # Load stimulus timing data
-    # stim_csv_path = os.path.join(NETSCRATCH, 'Raw_data', binfile_to_segment, 'stim_extra.csv')
-    stim_csv_path = os.path.join(HOME, 'Raw_data', binfile_to_segment, 'stim_extra.csv')
+    stim_csv_path = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'stim_extra.csv')
 
     
     if not os.path.exists(stim_csv_path):
@@ -364,7 +360,7 @@ def create_trial_specific_backgrounds():
     cropped_dims = np.load(regions_files[0])
     
     # Load full video
-    bin_pattern = os.path.join(HOME, 'Raw_data', binfile_to_segment, 'dat.bin')
+    bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'dat.bin')
     bin_files = glob.glob(bin_pattern)
     
     if not bin_files:
@@ -382,7 +378,7 @@ def create_trial_specific_backgrounds():
         data_ = data_.reshape(complete_frames, height, width)
     
     # Ensure the background output directory exists
-    background_output_dir = os.path.join(HOME, "Calibration_images", "Full_videos")
+    background_output_dir = os.path.join(HOLYLABS, "Calibration_images", "Full_videos")
     os.makedirs(background_output_dir, exist_ok=True)
     
     # Determine CSon and CSoff frame indices using ALL trials
@@ -440,7 +436,7 @@ def create_trial_specific_backgrounds():
         cv2.imwrite(CSoff_path, CSoff_bgr)
     
     # Save trial definitions as CSV
-    trial_csv_path = os.path.join(HOLYLABS, binfile_to_segment, "trial_definitions.csv")
+    trial_csv_path = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, "trial_definitions.csv")
     os.makedirs(os.path.dirname(trial_csv_path), exist_ok=True)   
     trial_df = pd.DataFrame([
         {'trial_num': trial_num, 'start_frame': start_frame, 'end_frame': end_frame}
@@ -475,7 +471,7 @@ def create_simple_averaged_background():
     cropped_dims = np.load(regions_files[0])
     
     # Load full video
-    bin_pattern = os.path.join(HOME, 'Raw_data', binfile_to_segment, '*dat.bin')
+    bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, '*dat.bin')
     bin_files = glob.glob(bin_pattern)
     
     if not bin_files:
@@ -493,7 +489,7 @@ def create_simple_averaged_background():
         data_ = data_.reshape(complete_frames, height, width)
     
     # Ensure the background output directory exists
-    background_output_dir = os.path.join(HOME, "Calibration_images", "Full_videos")
+    background_output_dir = os.path.join(HOLYLABS, "Calibration_images", "Full_videos")
     os.makedirs(background_output_dir, exist_ok=True)
     
     # Process each coordinate set
@@ -552,12 +548,11 @@ def create_backgrounds():
 
 def find_missing_data(probe_id):
     """
-    Recursively searches NETSCRATCH and HOLYLABS for the session ID. This is called when a bin file can't be found. Gives print statements identifying file location.
+    Recursively searches HOLYLABS for the session ID. This is called when a bin file can't be found. Gives print statements identifying file location.
     """
     # Define search paths
     SEARCH_PATHS = {
-        "NETSCRATCH": "/n/netscratch/gershman_lab/Lab/zkelso/",
-        "HOLYLABS": "/n/holylabs/gershman_lab/Users/zkelso"
+        "HOLYLABS": "data"
     }
 
     for location_name, path in SEARCH_PATHS.items():
@@ -943,7 +938,6 @@ def main():
             # This function will fail if the timestamps CSV can't be found. If the object is empty, check that the raw data is actually uploaded to the server.
             if ALL_TRIAL_DEFINITIONS is None:
                 print(f"\tVariable ALL_TRIAL_DEFINITIONS is None.")
-                print(f"\n\tThe raw data folder may be on Netscratch but not Holylabs. Checking...")
                 find_missing_data(session) # This function will print the location of any folder or file matching the session ID. 
                 
                 raise RuntimeError("Failed to calculate trial definitions")
@@ -990,7 +984,7 @@ def main():
             # ================================================================
             
             print("  Loading video data...")
-            bin_pattern = os.path.join(HOME, 'Raw_data', binfile_to_segment, 'dat.bin')
+            bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'dat.bin')
             bin_files = glob.glob(bin_pattern)
             
             if not bin_files:
@@ -1280,7 +1274,7 @@ def main():
     print("\nOutput locations:")
     print(f"  Videos: {DLC_PROJECT_PATH}/videos/")
     print(f"  JPEGs: {DLC_PROJECT_PATH}/unlabeled-data/")
-    print(f"  Backgrounds: {HOME}/Calibration_images/Full_videos/")
+    print(f"  Backgrounds: {HOLYLABS}/Calibration_images/Full_videos/")
 
     if ANONYMIZATION:
         print(f"  Lookup CSV: {LOOKUP_CSV_PATH}")

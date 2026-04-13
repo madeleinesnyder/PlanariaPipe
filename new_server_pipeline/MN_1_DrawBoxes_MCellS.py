@@ -22,8 +22,6 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import RectangleSelector
 from matplotlib.patches import Rectangle
 
-COORD_FOLDER = '/n/netscratch/gershman_lab/Lab/zkelso/Regions_files'
-
 
 def load_frame(filepath, width=2048, height=2048):
     """Load the first frame from a raw binary video file.

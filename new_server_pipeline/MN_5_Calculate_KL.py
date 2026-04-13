@@ -349,7 +349,7 @@ def get_session_splits(csv_path, session_name):
 
 
 def remove_poor_values(feature_vector, session):
-    csv_path = "/n/holylabs/gershman_lab/Users/zkelso/video_splits.csv"
+    csv_path = "hand_scored_datasheets/video_splits.csv"
     start_frames, end_frames = get_session_splits(csv_path, session)
 
     for s, e in zip(start_frames, end_frames):
@@ -445,8 +445,8 @@ def analyze_video_kl_divergence(
 
     feature_names = FEATURE_NAMES
 
-    features_folder = os.path.join(holylabs_dir, "Features")
-    raw_data_folder = os.path.join(home_dir, "Raw_data")
+    features_folder = os.path.join("data", "Features")
+    raw_data_folder = os.path.join("data", "Raw_data")
 
     feature_file = os.path.join(features_folder, f"{video_name}")
 
@@ -457,7 +457,7 @@ def analyze_video_kl_divergence(
 
     # Hard-coded path overrides for sessions stored in a different location
     _HL_ALT = (
-        "/n/holylabs/gershman_lab/Users/zkelso/Raw_data/Stuff_already_on_HL"
+        "data/Raw_data/Stuff_already_on_HL"
     )
     _ALT_SESSIONS = {
         "2025_10_15_14_16_21_trial_1_TC",
@@ -511,7 +511,7 @@ def analyze_video_kl_divergence(
 
     if save_results:
         if output_dir is None:
-            output_dir = os.path.join(holylabs_dir, "KL_Results")
+            output_dir = os.path.join("data", "KL_Results")
         os.makedirs(output_dir, exist_ok=True)
 
         json_path = os.path.join(output_dir, f"{video_name}_KL_results.json")
@@ -603,10 +603,8 @@ def convert_numpy(obj):
 
 def main():
     """Run the full KL divergence batch pipeline."""
-    HOME = "/n/holylabs/gershman_lab/Users/zkelso/"
-    HOLYLABS = "/n/holylabs/gershman_lab/Users/zkelso/"
 
-    KL_RESULTS_DIR = os.path.join(HOLYLABS, "KL_divergence_results")
+    KL_RESULTS_DIR = os.path.join("data", "KL_divergence_results")
     INDIVIDUAL_METADATA_DIR = os.path.join(KL_RESULTS_DIR, "individual_video_KL_metadata")
     INDIVIDUAL_SESSION_DIR = os.path.join(KL_RESULTS_DIR, "individual_session_KL_results")
 
@@ -631,7 +629,7 @@ def main():
     print("DISCOVERING FEATURE FILES")
     print("=" * 70)
 
-    features_folder = os.path.join(HOLYLABS, "Features")
+    features_folder = os.path.join("data", "Features")
     all_feature_files = glob.glob(
         os.path.join(features_folder, "*_FINAL_Feature_vector.npy")
     )
@@ -677,7 +675,7 @@ def main():
         print("=" * 70 + "\n")
 
         pattern = os.path.join(
-            HOLYLABS, "Features",
+            "data", "Features",
             f"{SESSION}_regions_*_FINAL_Feature_vector.npy",
         )
         feature_files = glob.glob(pattern)
@@ -697,8 +695,8 @@ def main():
             try:
                 df, results = analyze_video_kl_divergence(
                     video_name=video,
-                    home_dir=HOME,
-                    holylabs_dir=HOLYLABS,
+                    home_dir="data",
+                    holylabs_dir="data",
                     LABEL_TYPE=LABEL_TYPE,
                     save_results=False,
                     compute_null=COMPUTE_NULL,
