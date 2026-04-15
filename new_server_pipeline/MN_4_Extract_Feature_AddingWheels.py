@@ -43,8 +43,7 @@ from sklearn.decomposition import PCA
 # ============================================================================
 
 VIDEO_PREFIX_FILTER = [
-    # '2025_10_14_10_47_52_trial_1_TP',
-    # ... add session prefixes here ...
+    '2025_10_15_10_20_58_trial_1_TC'
 ]
 
 VIDEO_GROUP_FILTER = None
@@ -575,6 +574,51 @@ def process_all_masks_OLD(filenames_, target_date, num_masks):
             print()
 
         return all_metrics
+
+
+def process_final_mask(final_path, num_masks=1):
+    """
+    Load an existing FINAL mask file and extract per-frame features,
+    bypassing the stitching step entirely.
+
+    Parameters
+    ----------
+    final_path : str
+        Path to the *_FINAL_*_binary_masks.npz file.
+    num_masks : int
+        Number of masks per frame (usually 1 for single-worm videos).
+
+    Returns
+    -------
+    all_metrics : list of dict
+        List of metric dictionaries, one per frame.
+    """
+    print(f"Loading pre-existing FINAL mask: {final_path}")
+    with np.load(final_path) as data:
+        masks = data["masks"]
+    if masks.ndim == 4 and masks.shape[1] == 1:
+        masks = masks.squeeze(axis=1)
+    print(f"  Mask shape: {masks.shape}")
+
+    all_metrics = []
+    T = masks.shape[0]
+    print(f"Processing {T} frames...")
+
+    for frame in range(T):
+        if frame % 100 == 0 or frame == T - 1:
+            progress_pct = (frame + 1) / T * 100
+            print(
+                f"\r  Processing frame {frame}/{T} ({progress_pct:.1f}%)",
+                end="",
+                flush=True,
+            )
+        for mask_index in range(num_masks):
+            mask = masks[frame]
+            metrics = analyze_shape(mask)
+            all_metrics.append(metrics)
+
+    print()
+    return all_metrics
 
 
 def process_all_masks(filenames_, num_masks):
@@ -1751,6 +1795,7 @@ def run_feature_extraction_pipeline(
     plot_individual=True,
     plot_combined=True,
     plot_trials=True,
+    assume_final=False,
 ):
     """
     Master function to run entire feature extraction pipeline.
@@ -1775,6 +1820,9 @@ def run_feature_extraction_pipeline(
         Whether to plot combined histogram across all videos.
     plot_trials : bool
         Whether to create trial-aligned plots.
+    assume_final : bool
+        If True, skip stitching and load the existing *_FINAL_* mask file
+        directly. Raises an error if no FINAL file is found for a video.
 
     Returns:
     --------
@@ -1791,17 +1839,26 @@ def run_feature_extraction_pipeline(
     print(f"{'=' * 30}")
     print(f"Videos to process: {len(video_list)}")
     print(f"Output folder: {feature_folder}")
+    if assume_final:
+        print("Mode: ASSUME_FINAL (skipping stitching, loading existing FINAL masks)")
     print(f"{'=' * 30}\n")
 
     all_video_features = {}
     processed_data = {}
 
-    video_list_ = []
-    for v in video_list:
-        if check_date_in_splits(
-            "hand_scored_datasheets/video_splits.csv", v
-        ):
-            video_list_.append(v)
+    if assume_final:
+        video_list_ = list(video_list)
+    else:
+        video_list_ = []
+        for v in video_list:
+            if check_date_in_splits(
+                "hand_scored_datasheets/video_splits.csv", v
+            ):
+                video_list_.append(v)
+
+    if not video_list_:
+        print("WARNING: No videos remain after filtering. Nothing to process.")
+        return {}
 
     for video_idx, current_video in enumerate(reversed(video_list_)):
         print(f"\n{'=' * 30}")
@@ -1837,7 +1894,19 @@ def run_feature_extraction_pipeline(
                     )
 
             print("\nExtracting features from all frames...")
-            results = process_all_masks(mask_files, num_masks=1)
+            if assume_final:
+                final_files = [
+                    f for f in mask_files if "FINAL" in os.path.basename(str(f))
+                ]
+                if not final_files:
+                    print(
+                        f"ERROR: assume_final=True but no FINAL mask file "
+                        f"found for {current_video}. Skipping."
+                    )
+                    continue
+                results = process_final_mask(str(final_files[0]), num_masks=1)
+            else:
+                results = process_all_masks(mask_files, num_masks=1)
             print(f"  Extracted features from {len(results)} frames")
 
             print("\nApplying outlier filtering...")
@@ -1938,9 +2007,8 @@ def run_feature_extraction_pipeline(
                 Angles, Concavities, PC1, PC2,
             ))
 
-            output_filename = (
-                current_video.split("_0_")[0] + "_FINAL_Feature_vector.npy"
-            )
+            vid_base = current_video.split("_fullvideo")[0]
+            output_filename = vid_base + "_FINAL_Feature_vector.npy"
             output_path = os.path.join(feature_folder, output_filename)
             np.save(output_path, Feature_vector)
 
@@ -2052,6 +2120,7 @@ def main():
     PLOT_COMBINED = False
     PLOT_TRIALS = False
     SAVE_SESSION_SUMMARY = False
+    ASSUME_FINAL = True
 
     prefix_filter = normalize_filter(VIDEO_PREFIX_FILTER)
     group_filter = normalize_filter(VIDEO_GROUP_FILTER)
@@ -2199,13 +2268,24 @@ def main():
                 continue
             videos_to_process.append(video_name)
 
-        videos_to_process = [v for v in videos_to_process if "_0_1799" in v]
+        if ASSUME_FINAL:
+            # Prefer FINAL mask files; fall back to _0_1799 if no FINAL exists
+            final_vids = [v for v in videos_to_process if "_FINAL_" in v]
+            if final_vids:
+                videos_to_process = final_vids
+            else:
+                videos_to_process = [
+                    v for v in videos_to_process if "_0_1799" in v
+                ]
+        else:
+            videos_to_process = [v for v in videos_to_process if "_0_1799" in v]
 
         if not videos_to_process:
             print(f"WARNING: No videos found for {SESSION} after filtering")
             continue
 
         print(f"Found {len(videos_to_process)} videos to process:")
+
         for video in videos_to_process:
             regions = (
                 video.split("_regions_")[1] if "_regions_" in video else "unknown"
@@ -2228,6 +2308,7 @@ def main():
                 plot_individual=plot_individual,
                 plot_combined=plot_combined,
                 plot_trials=plot_trials,
+                assume_final=ASSUME_FINAL,
             )
 
             all_sessions_results[SESSION] = results

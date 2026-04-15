@@ -37,18 +37,20 @@ from datetime import datetime
 # ============================================================================
 
 SESSIONS_TO_PROCESS = [
-    '2025_10_17_14_54_47_trial_1_TP',
-    '2025_10_17_14_45_34_trial_1_TP'
+    '2025_10_15_10_20_58_trial_1_TC'
 ]
 
 # ============================================================================
 # GLOBAL PROCESSING FLAGS (apply to all sessions in batch)
 # ============================================================================
 
-LONG_OR_SHORT = 'short' #'long'        # Options: 'long' or 'short', indicates whether the OUTPUT video is one long video or a video per trial
-ANONYMIZATION = True                   # Options: True or False
+LONG_OR_SHORT = 'long' #'long'        # Options: 'long' or 'short', indicates whether the OUTPUT video is one long video or a video per trial
+ANONYMIZATION = False                   # Options: True or False
 SEPARATE_CS_ON_OFF_BACKGROUNDS = True  # True: CSon/CSoff, False: single averaged
-CROPPED_VIDEOS = True                 # True means the SOURCE videos have the ITI cut out; False means the original videos were continuous/longform
+CROPPED_VIDEOS = False                 # True means the SOURCE videos have the ITI cut out; False means the original videos were continuous/longform
+
+# ^^ set short True True False for anon videos
+# ^^ set long False True False for normal videos
 
 # ============================================================================
 # CAMERA AND TIMING PARAMETERS
@@ -67,10 +69,6 @@ TC_TOTAL_FRAMES = 274
 # ============================================================================
 # DIRECTORY PATHS
 # ============================================================================
-
-HOLYLABS = "data" # "/n/holylabs/gershman_lab/Users/zkelso/Raw_data"
-# DLC_PROJECT_PATH = '/n/holylabs/LABS/gershman_lab/Users/zkelso/DLC_Projects/WormTracking'
-DLC_PROJECT_PATH = "data/temporary_jpgs"
 
 # Anonymization file paths
 ANONYMIZATION_DICT_PATH = 'Anonymization_tools/anonymization_dictionary.csv'
@@ -124,7 +122,7 @@ def update_session_context(session_name):
     global binfile_to_segment, COORD_FOLDER, SESSION_TYPE
     
     binfile_to_segment = session_name
-    COORD_FOLDER = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment)
+    COORD_FOLDER = os.path.join('data', 'Raw_data', binfile_to_segment)
     
     # Detect session type from name
     if binfile_to_segment.endswith('_TC'):
@@ -153,7 +151,7 @@ def calculate_trial_definitions_from_timestamps():
     print("  Calculating trial definitions from timestamps...")
     
     # Load stimulus timing data
-    stim_csv_path = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'stim_extra.csv')
+    stim_csv_path = os.path.join('data', 'Raw_data', binfile_to_segment, 'stim_extra.csv')
 
     
     if not os.path.exists(stim_csv_path):
@@ -318,7 +316,7 @@ def make_DLC_videos_from_jpegs(folder_name, SOURCE_FRAMES_DLC):
     
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video_filename = f"{folder_name}.mp4"
-    video_path = os.path.join(DLC_PROJECT_PATH, 'videos', video_filename)
+    video_path = os.path.join('data/temporary_jpgs/videos', video_filename)
     
     os.makedirs(os.path.dirname(video_path), exist_ok=True)
     
@@ -360,7 +358,7 @@ def create_trial_specific_backgrounds():
     cropped_dims = np.load(regions_files[0])
     
     # Load full video
-    bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'dat.bin')
+    bin_pattern = os.path.join('data', 'Raw_data', binfile_to_segment, 'dat.bin')
     bin_files = glob.glob(bin_pattern)
     
     if not bin_files:
@@ -378,7 +376,7 @@ def create_trial_specific_backgrounds():
         data_ = data_.reshape(complete_frames, height, width)
     
     # Ensure the background output directory exists
-    background_output_dir = os.path.join(HOLYLABS, "Calibration_images", "Full_videos")
+    background_output_dir = os.path.join("data", "Calibration_images", "Full_videos")
     os.makedirs(background_output_dir, exist_ok=True)
     
     # Determine CSon and CSoff frame indices using ALL trials
@@ -436,7 +434,7 @@ def create_trial_specific_backgrounds():
         cv2.imwrite(CSoff_path, CSoff_bgr)
     
     # Save trial definitions as CSV
-    trial_csv_path = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, "trial_definitions.csv")
+    trial_csv_path = os.path.join('data', 'Raw_data', binfile_to_segment, 'trial_definitions.csv')
     os.makedirs(os.path.dirname(trial_csv_path), exist_ok=True)   
     trial_df = pd.DataFrame([
         {'trial_num': trial_num, 'start_frame': start_frame, 'end_frame': end_frame}
@@ -471,7 +469,7 @@ def create_simple_averaged_background():
     cropped_dims = np.load(regions_files[0])
     
     # Load full video
-    bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, '*dat.bin')
+    bin_pattern = os.path.join('data', 'Raw_data', binfile_to_segment, '*dat.bin')
     bin_files = glob.glob(bin_pattern)
     
     if not bin_files:
@@ -489,7 +487,7 @@ def create_simple_averaged_background():
         data_ = data_.reshape(complete_frames, height, width)
     
     # Ensure the background output directory exists
-    background_output_dir = os.path.join(HOLYLABS, "Calibration_images", "Full_videos")
+    background_output_dir = os.path.join("data", "Calibration_images", "Full_videos")
     os.makedirs(background_output_dir, exist_ok=True)
     
     # Process each coordinate set
@@ -984,7 +982,7 @@ def main():
             # ================================================================
             
             print("  Loading video data...")
-            bin_pattern = os.path.join(HOLYLABS, 'Raw_data', binfile_to_segment, 'dat.bin')
+            bin_pattern = os.path.join('data', 'Raw_data', binfile_to_segment, 'dat.bin')
             bin_files = glob.glob(bin_pattern)
             
             if not bin_files:
@@ -1027,7 +1025,7 @@ def main():
                     
                     # Create output directory
                     SOURCE_FRAMES_DLC = Path(os.path.join(
-                        DLC_PROJECT_PATH, 'unlabeled-data', binfile_to_segment, folder_name
+                        'data/temporary_jpgs/unlabeled-data', binfile_to_segment, folder_name
                     ))
                     os.makedirs(SOURCE_FRAMES_DLC, exist_ok=True)
                     
@@ -1114,7 +1112,7 @@ def main():
                         
                         # Create output folder
                         SOURCE_FRAMES_DLC = Path(os.path.join(
-                            DLC_PROJECT_PATH, 'unlabeled-data', binfile_to_segment, folder_name
+                            'data/temporary_jpgs/unlabeled-data', binfile_to_segment, folder_name
                         ))
                         os.makedirs(SOURCE_FRAMES_DLC, exist_ok=True)
                         
@@ -1272,9 +1270,9 @@ def main():
 
     # Output locations
     print("\nOutput locations:")
-    print(f"  Videos: {DLC_PROJECT_PATH}/videos/")
-    print(f"  JPEGs: {DLC_PROJECT_PATH}/unlabeled-data/")
-    print(f"  Backgrounds: {HOLYLABS}/Calibration_images/Full_videos/")
+    print(f"  Videos: data/temporary_jpgs/videos/")
+    print(f"  JPEGs: data/temporary_jpgs/unlabeled-data/")
+    print(f"  Backgrounds: data/Calibration_images/Full_videos/")
 
     if ANONYMIZATION:
         print(f"  Lookup CSV: {LOOKUP_CSV_PATH}")

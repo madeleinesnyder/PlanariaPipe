@@ -42,16 +42,13 @@ ann_obj_id = 1
 # ═══════════════════════════════════════════════════════════════════════════
 
 sessions_to_process = [
-    '2025_07_30_14_45_13_trial_1_TC',
+    '2025_10_15_10_20_58_trial_1_TC',
 ]
-
-use_prior_labels = True
-use_boxes = False
 
 holylabs_base = "data/Raw_data/"
 masks_base = "data/Masks/"
 gifs_base = "data/GIFs/"
-boxes_base = "/n/holylabs/gershman_lab/Users/zkelso/DLC_Projects/WormTracking/labeled_data/"
+#boxes_base = "/n/holylabs/gershman_lab/Users/zkelso/DLC_Projects/WormTracking/labeled_data/"
 video_folders_base = "data/temporary_jpgs/unlabeled-data"
 video_split_csv = "hand_scored_datasheets/video_splits.csv"
 fake_split_csv = "hand_scored_datasheets/fake_video_splits.csv"
@@ -570,13 +567,13 @@ def process_single_split(
     """Process one split of the video: prompt, propagate, save mask and GIF."""
     first_frame_idx = frame_split_starts[split_idx]
     last_frame_idx = frame_split_ends[split_idx]
-    all_points_path = (
-        boxes_base
-        + CURRENT_VIDEO
-        + "frame_start_"
-        + str(frame_split_starts)
-        + "_SAM_points.npy"
-    )
+    # all_points_path = (
+    #     boxes_base
+    #     + CURRENT_VIDEO
+    #     + "frame_start_"
+    #     + str(frame_split_starts)
+    #     + "_SAM_points.npy"
+    # )
     all_video_segments = {}
 
     inference_state = predictor.init_state(video_path=video_dir)
@@ -656,7 +653,7 @@ def process_all_splits(
     CURRENT_VIDEO,
     masks_base,
     gifs_base,
-    boxes_base,
+    #boxes_base,
     make_gif=True,
 ):
     """Iterate over every split defined in the CSV and process each one."""
@@ -668,13 +665,13 @@ def process_all_splits(
 
         first_frame_idx = frame_split_starts[i]
         last_frame_idx = frame_split_ends[i]
-        all_points_path = (
-            boxes_base
-            + CURRENT_VIDEO
-            + "frame_start_"
-            + str(frame_split_starts)
-            + "_SAM_points.npy"
-        )
+        # all_points_path = (
+        #     boxes_base
+        #     + CURRENT_VIDEO
+        #     + "frame_start_"
+        #     + str(frame_split_starts)
+        #     + "_SAM_points.npy"
+        # )
         all_video_segments = {}
 
         inference_state = predictor.init_state(video_path=video_dir)
@@ -771,7 +768,7 @@ def main():
         CURRENT_VIDEO,
         masks_base,
         gifs_base,
-        boxes_base,
+        #boxes_base,
         make_gif=True,
     )
 

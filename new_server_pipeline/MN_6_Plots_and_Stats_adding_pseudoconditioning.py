@@ -597,15 +597,13 @@ def main():
     """Run the complete KL divergence analysis and plotting pipeline."""
     # --- Configuration ---
     kl_csv_path = (
-        "/n/holylabs/gershman_lab/Users/zkelso/KL_divergence_results/"
         "Tasmanian_Conditioning_KL_Results_COMPILED_2026_03_25_14_36_31.csv"
     )
     log_csv_path = (
-        "/n/holylabs/gershman_lab/Users/zkelso/KL_divergence_results/"
-        "utils/Planarian_Experiments_Log.csv"
+        "hand_scored_datasheets/Planarian_Experiments_Log.csv"
     )
     output_dir = (
-        "/n/holylabs/gershman_lab/Users/zkelso/KL_divergence_results/figures/"
+        "data/KL_divergence_results/figures/"
     )
 
     troupe_list = TROUPE_LIST

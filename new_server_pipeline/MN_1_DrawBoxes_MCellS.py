@@ -9,6 +9,7 @@ Usage:
     python LF_1_DrawBoxes_MCellS.py /path/to/dat.bin
     python LF_1_DrawBoxes_MCellS.py /path/to/dat.bin --width 2048 --height 2048
     python LF_1_DrawBoxes_MCellS.py  # launches interactive prompt
+    # use: ./data/Raw_data/2025_10_15_10_20_58_trial_1_TC/dat.bin as example
 
 Functions can also be imported:
     from LF_1_DrawBoxes_MCellS import load_frame, select_regions, save_regions
