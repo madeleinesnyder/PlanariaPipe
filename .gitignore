@@ -15,6 +15,9 @@
 *.npz
 *.npy
 
+# Videos
+*.mp4 
+
 # Jupyter checkpoints
 .ipynb_checkpoints/
 
