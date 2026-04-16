@@ -24,7 +24,7 @@ try:
     import statsmodels.formula.api as smf
 
     HAS_STATSMODELS = True
-except ImportError:
+except (ImportError, AttributeError):
     HAS_STATSMODELS = False
 
 
@@ -273,7 +273,7 @@ def plot_troupe_kl_over_days(
                 for worm_col in kl_columns:
                     worm_day_means = troupe_df.groupby("Day")[worm_col].mean()
                     ax.plot(
-                        worm_day_means.index, worm_day_means.values,
+                        worm_day_means.index.values, worm_day_means.values,
                         color=tc_color, linewidth=2, alpha=0.35,
                         marker="o", markersize=4, zorder=1,
                     )
@@ -320,7 +320,7 @@ def plot_troupe_kl_over_days(
                 for worm_col in kl_columns:
                     worm_day_means = troupe_df.groupby("Day")[worm_col].mean()
                     ax.plot(
-                        worm_day_means.index, worm_day_means.values,
+                        worm_day_means.index.values, worm_day_means.values,
                         color=tp_color, linewidth=2, alpha=0.35,
                         marker="o", markersize=4, zorder=1,
                     )
@@ -597,13 +597,13 @@ def main():
     """Run the complete KL divergence analysis and plotting pipeline."""
     # --- Configuration ---
     kl_csv_path = (
-        "Tasmanian_Conditioning_KL_Results_COMPILED_2026_03_25_14_36_31.csv"
+        "../Tasmanian_Conditioning_KL_Results_COMPILED_2026_03_25_14_36_31.csv"
     )
     log_csv_path = (
-        "hand_scored_datasheets/Planarian_Experiments_Log.csv"
+        "../hand_scored_datasheets/Planarian_Experiments_Log.csv"
     )
     output_dir = (
-        "data/KL_divergence_results/figures/"
+        "../figures/"
     )
 
     troupe_list = TROUPE_LIST
@@ -611,7 +611,7 @@ def main():
     figure_format = "svg"
     figure_dpi = 300
     plot_null = True
-    plot_individual_lines = False
+    plot_individual_lines = True
 
     print("=" * 80)
     print("STARTING KL DIVERGENCE ANALYSIS PIPELINE")
@@ -646,12 +646,12 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
         if plot_individual_lines:
             filename = (
-                f"kl_onoff_{'_'.join(troupe_list)}_individual_FINAL"
+                f"../figures/Fig3C_{'_'.join(troupe_list)}_individual_FINAL"
                 f".{figure_format}"
             )
         else:
             filename = (
-                f"kl_onoff_{'_'.join(troupe_list)}_FINAL.{figure_format}"
+                f"../figures/Fig3Calt_{'_'.join(troupe_list)}_FINAL.{figure_format}"
             )
         filepath = os.path.join(output_dir, filename)
         fig_onoff.savefig(filepath, dpi=figure_dpi, bbox_inches="tight")
