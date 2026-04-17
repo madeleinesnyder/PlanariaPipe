@@ -291,6 +291,219 @@ def extract_CSon_CSoff_frames(
 
 
 # ============================================================================
+# Feature distribution heatmaps
+# ============================================================================
+
+def plot_feature_heatmaps(
+    CS_on_samples,
+    CS_off_samples,
+    feature_names,
+    n_bins=50,
+    save_path=None,
+    video_title="",
+    include_features=None,
+):
+    """
+    Plot side-by-side histogram heatmaps of feature distributions for
+    CS-on vs CS-off conditions, plus a difference panel.
+
+    Each row is one feature (z-scored across both conditions so features
+    are on a comparable scale).  Columns are histogram bins and colour
+    represents probability density.
+
+    Parameters
+    ----------
+    CS_on_samples : np.ndarray, shape (n_on, n_features)
+    CS_off_samples : np.ndarray, shape (n_off, n_features)
+    feature_names : list of str
+    n_bins : int
+    save_path : str or None
+        If provided, figure is saved to this path.
+    video_title : str
+        Optional label shown in the suptitle.
+    include_features : list of str or None
+        If provided, only these features are shown. None means show all.
+    """
+    if include_features is not None:
+        keep_idx = [i for i, f in enumerate(feature_names) if f in include_features]
+    else:
+        keep_idx = list(range(len(feature_names)))
+    feature_names = [feature_names[i] for i in keep_idx]
+    CS_on_samples = CS_on_samples[:, keep_idx]
+    CS_off_samples = CS_off_samples[:, keep_idx]
+
+    n_features = CS_on_samples.shape[1]
+
+    z_range = 4.0
+    edges = np.linspace(-z_range, z_range, n_bins + 1)
+
+    density_on = np.zeros((n_features, n_bins))
+    density_off = np.zeros((n_features, n_bins))
+
+    for i in range(n_features):
+        on_vals = CS_on_samples[:, i]
+        off_vals = CS_off_samples[:, i]
+        on_vals = on_vals[~np.isnan(on_vals)]
+        off_vals = off_vals[~np.isnan(off_vals)]
+
+        combined = np.concatenate([on_vals, off_vals])
+        if len(combined) == 0 or np.std(combined) == 0:
+            continue
+
+        mu, sigma = np.mean(combined), np.std(combined)
+        on_z = (on_vals - mu) / sigma
+        off_z = (off_vals - mu) / sigma
+
+        h_on, _ = np.histogram(on_z, bins=edges, density=True)
+        h_off, _ = np.histogram(off_z, bins=edges, density=True)
+
+        density_on[i] = h_on
+        density_off[i] = h_off
+
+    vmax = max(density_on.max(), density_off.max())
+    diff = density_on - density_off
+    dmax = np.abs(diff).max() or 1.0
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, max(4, n_features * 0.45)),
+                             gridspec_kw={"width_ratios": [1, 1, 1]})
+
+    im0 = axes[0].imshow(density_on, aspect="auto", cmap="viridis",
+                          vmin=0, vmax=vmax, interpolation="nearest")
+    axes[0].set_title("CS-on (stimulus)")
+
+    im1 = axes[1].imshow(density_off, aspect="auto", cmap="viridis",
+                          vmin=0, vmax=vmax, interpolation="nearest")
+    axes[1].set_title("CS-off (inter-trial)")
+
+    im2 = axes[2].imshow(diff, aspect="auto", cmap="RdBu_r",
+                          vmin=-dmax, vmax=dmax, interpolation="nearest")
+    axes[2].set_title("Difference (on − off)")
+
+    for ax in axes:
+        ax.set_yticks(range(n_features))
+        ax.set_yticklabels(feature_names, fontsize=8)
+        ax.set_xlabel("Feature value (z-score)")
+        n_ticks = 5
+        tick_positions = np.linspace(0, n_bins - 1, n_ticks)
+        tick_values = np.linspace(-z_range, z_range, n_ticks)
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels([f"{v:+.1f}" for v in tick_values], fontsize=8)
+
+    fig.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04, label="density")
+    fig.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04, label="Δ density")
+
+    title = "Feature distributions: CS-on vs CS-off"
+    if video_title:
+        title += f"\n{video_title}"
+    fig.suptitle(title, fontsize=12, fontweight="bold", y=1.02)
+    fig.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight", dpi=150)
+        print(f"  Heatmap saved: {save_path}")
+
+    plt.show()
+    plt.close(fig)
+
+    return fig
+
+
+def plot_feature_timeseries(
+    CS_on_samples,
+    CS_off_samples,
+    feature_names,
+    save_path=None,
+    video_title="",
+    include_features=None,
+    alpha=0.7,
+):
+    """
+    Plot line traces of z-scored feature values over time for CS-on (left
+    column) and CS-off (right column).  One subplot row per feature.
+
+    Parameters
+    ----------
+    CS_on_samples : np.ndarray, shape (n_on, n_features)
+    CS_off_samples : np.ndarray, shape (n_off, n_features)
+    feature_names : list of str
+    save_path : str or None
+    video_title : str
+    include_features : list of str or None
+        If provided, only these features are shown. None means show all.
+    alpha : float
+        Line opacity.
+    """
+    if include_features is not None:
+        keep_idx = [i for i, f in enumerate(feature_names) if f in include_features]
+    else:
+        keep_idx = list(range(len(feature_names)))
+    feature_names = [feature_names[i] for i in keep_idx]
+    CS_on_samples = CS_on_samples[:, keep_idx]
+    CS_off_samples = CS_off_samples[:, keep_idx]
+
+    n_features = len(feature_names)
+
+    on_z = np.full_like(CS_on_samples, np.nan, dtype=float)
+    off_z = np.full_like(CS_off_samples, np.nan, dtype=float)
+
+    for i in range(n_features):
+        on_col = CS_on_samples[:, i].astype(float)
+        off_col = CS_off_samples[:, i].astype(float)
+        combined = np.concatenate([on_col[~np.isnan(on_col)],
+                                   off_col[~np.isnan(off_col)]])
+        if len(combined) == 0 or np.std(combined) == 0:
+            continue
+        mu, sigma = np.mean(combined), np.std(combined)
+        on_z[:, i] = (on_col - mu) / sigma
+        off_z[:, i] = (off_col - mu) / sigma
+
+    fig, axes = plt.subplots(n_features, 2,
+                             figsize=(16, n_features * 1.8),
+                             sharex="col", sharey="row")
+    if n_features == 1:
+        axes = axes.reshape(1, -1)
+
+    on_color = "#D62728"
+    off_color = "#1F77B4"
+
+    for i in range(n_features):
+        ax_on = axes[i, 0]
+        ax_off = axes[i, 1]
+
+        ax_on.plot(on_z[:, i], color=on_color, linewidth=0.5, alpha=alpha)
+        ax_on.axhline(0, color="grey", linewidth=0.5, linestyle="--")
+        ax_on.set_ylabel(feature_names[i], fontsize=8, rotation=0,
+                         ha="right", va="center")
+
+        ax_off.plot(off_z[:, i], color=off_color, linewidth=0.5, alpha=alpha)
+        ax_off.axhline(0, color="grey", linewidth=0.5, linestyle="--")
+
+        if i == 0:
+            ax_on.set_title(f"CS-on (stimulus)  [{CS_on_samples.shape[0]} frames]",
+                            fontsize=10)
+            ax_off.set_title(f"CS-off (inter-trial)  [{CS_off_samples.shape[0]} frames]",
+                             fontsize=10)
+
+    axes[-1, 0].set_xlabel("Frame index")
+    axes[-1, 1].set_xlabel("Frame index")
+
+    title = "Feature time series: CS-on vs CS-off"
+    if video_title:
+        title += f"\n{video_title}"
+    fig.suptitle(title, fontsize=12, fontweight="bold", y=1.01)
+    fig.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight", dpi=150)
+        print(f"  Time-series plot saved: {save_path}")
+
+    plt.show()
+    plt.close(fig)
+
+    return fig
+
+
+# ============================================================================
 # KL computation wrapper
 # ============================================================================
 
@@ -412,6 +625,7 @@ def analyze_video_kl_divergence(
     output_dir=None,
     compute_null=False,
     show_null_diagnostic=True,
+    plot_heatmaps=True,
 ):
     """
     Master function to compute KL divergence between CS-on and CS-off for a
@@ -435,6 +649,8 @@ def analyze_video_kl_divergence(
         Whether to compute circshift null distribution.
     show_null_diagnostic : bool
         Whether to display diagnostic plot of KL vs shift.
+    plot_heatmaps : bool
+        Whether to plot feature distribution heatmaps (CS-on vs CS-off).
 
     Returns
     -------
@@ -460,7 +676,7 @@ def analyze_video_kl_divergence(
 
     # Hard-coded path overrides for sessions stored in a different location
     _HL_ALT = (
-        "data/Raw_data/Stuff_already_on_HL"
+        "../data/Raw_data/Stuff_already_on_HL"
     )
     _ALT_SESSIONS = {
         "2025_10_15_14_16_21_trial_1_TC",
@@ -501,6 +717,34 @@ def analyze_video_kl_divergence(
         CS_on_samples, CS_off_samples, feature_names
     )
 
+    if plot_heatmaps:
+        if output_dir is None:
+            heatmap_dir = os.path.join("../data", "KL_Results")
+        else:
+            heatmap_dir = output_dir
+        os.makedirs(heatmap_dir, exist_ok=True)
+        heatmap_save = os.path.join(
+            heatmap_dir,
+            f"{video_name}_feature_heatmap.png",
+        )
+        _PLOT_FEATURES = ["Areas", "Perimeters", "Circularities", "PC2"]
+        plot_feature_heatmaps(
+            CS_on_samples, CS_off_samples, feature_names,
+            save_path=heatmap_save,
+            video_title=video_name,
+            include_features=_PLOT_FEATURES,
+        )
+        ts_save = os.path.join(
+            heatmap_dir,
+            f"{video_name}_feature_timeseries.png",
+        )
+        plot_feature_timeseries(
+            CS_on_samples, CS_off_samples, feature_names,
+            save_path=ts_save,
+            video_title=video_name,
+            include_features=_PLOT_FEATURES,
+        )
+
     results_df = create_results_dataframe(
         video_name, session_prefix, results_dict, feature_names, extraction_info
     )
@@ -514,7 +758,7 @@ def analyze_video_kl_divergence(
 
     if save_results:
         if output_dir is None:
-            output_dir = os.path.join("data", "KL_Results")
+            output_dir = os.path.join("../data", "KL_Results")
         os.makedirs(output_dir, exist_ok=True)
 
         json_path = os.path.join(output_dir, f"{video_name}_KL_results.json")
@@ -607,17 +851,20 @@ def convert_numpy(obj):
 def main():
     """Run the full KL divergence batch pipeline."""
 
-    KL_RESULTS_DIR = os.path.join("data", "KL_divergence_results")
+    KL_RESULTS_DIR = os.path.join("../data", "KL_divergence_results")
     INDIVIDUAL_METADATA_DIR = os.path.join(KL_RESULTS_DIR, "individual_video_KL_metadata")
     INDIVIDUAL_SESSION_DIR = os.path.join(KL_RESULTS_DIR, "individual_session_KL_results")
+    HEATMAP_DIR = os.path.join(KL_RESULTS_DIR, "feature_heatmaps")
 
     os.makedirs(KL_RESULTS_DIR, exist_ok=True)
     os.makedirs(INDIVIDUAL_METADATA_DIR, exist_ok=True)
     os.makedirs(INDIVIDUAL_SESSION_DIR, exist_ok=True)
+    os.makedirs(HEATMAP_DIR, exist_ok=True)
 
     SAVE_RESULTS = True
     COMPUTE_NULL = False
     SHOW_NULL_DIAGNOSTIC = False
+    PLOT_HEATMAPS = True
 
     prefix_filter = normalize_filter(VIDEO_PREFIX_FILTER)
     group_filter = normalize_filter(VIDEO_GROUP_FILTER)
@@ -632,7 +879,7 @@ def main():
     print("DISCOVERING FEATURE FILES")
     print("=" * 70)
 
-    features_folder = os.path.join("data", "Features")
+    features_folder = os.path.join("../data", "Features")
     all_feature_files = glob.glob(
         os.path.join(features_folder, "*_FINAL_Feature_vector.npy")
     )
@@ -678,7 +925,7 @@ def main():
         print("=" * 70 + "\n")
 
         pattern = os.path.join(
-            "data", "Features",
+            "../data", "Features",
             f"{SESSION}_regions_*_FINAL_Feature_vector.npy",
         )
         feature_files = glob.glob(pattern)
@@ -698,12 +945,14 @@ def main():
             try:
                 df, results = analyze_video_kl_divergence(
                     video_name=video,
-                    home_dir="data",
-                    holylabs_dir="data",
+                    home_dir="../data",
+                    holylabs_dir="../data",
                     LABEL_TYPE=LABEL_TYPE,
                     save_results=False,
+                    output_dir=HEATMAP_DIR,
                     compute_null=COMPUTE_NULL,
                     show_null_diagnostic=SHOW_NULL_DIAGNOSTIC,
+                    plot_heatmaps=PLOT_HEATMAPS,
                 )
                 session_results.append(df)
                 all_sessions_results.append(df)
