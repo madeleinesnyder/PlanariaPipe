@@ -12,7 +12,7 @@ ANNOTATED_VIDEOS_PATH = f"{HOME}/Annotated_videos"
 VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm']
 
 # Profile options for the dropdown - modify these as needed
-PROFILES = ["ZK"]
+PROFILES = ["Sc_1","Sc_2","Sc_3"]
 
 # Keyboard shortcuts - modify these as needed
 KEYBINDINGS = {
